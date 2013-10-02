@@ -1,5 +1,5 @@
 # Time Accounting
 
-+ Oct 2:
++ **Oct 2:** 1:05
     + 20 minutes discussing article with editor
-    + Writing: 18:45-
+    + Writing: 45 minutes
