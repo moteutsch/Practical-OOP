@@ -8,6 +8,16 @@ A step-by-step tutorial showing the reader how to create a quiz app, probably wi
 
 What do you need in a quiz app? Page for displaying a question with choices, POST action for processing whether correct or incorrect, redirecting to next question and storing result in session and displaying it on the next page, end page.
 
+For this basic feature set, what code do we need?
+
+Top down:
++ Controllers: choose-quiz, solve, check-answer, end
++ Services: {QuizServiceInterface: showAllQuizes, startQuiz, getQuestion, checkSolution, isOver, getResult}
++ Mappers: {QuizMapperInterface: findAll, findById}
++ Entities: {Quiz: __construct(questions), getId, getQuestions; Question: __construct(solutions, correctSolutionId), getId, getSolution, getCorrectSolution, isCorrectSolution}
+
+**Mention**: Abstracting away session for compatability with CLI an other non-web (cookie) interfaces
+
 Extra features: 
 + Pass or fail based on number of correct/incorrect questions (set in database)
 + Simple server-side timer for quiz (time set in database)
