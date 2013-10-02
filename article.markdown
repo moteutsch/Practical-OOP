@@ -23,6 +23,7 @@ Top down:
 **Mention**: Abstracting away session for compatability with CLI an other non-web (cookie) interfaces
 
 Extra features: 
+
 + Pass or fail based on number of correct/incorrect questions (set in database)
 + Simple server-side timer for quiz (time set in database)
 
@@ -33,7 +34,6 @@ Extra features:
     curl -sS https://getcomposer.org/installer | php
     
     Install MongoDB "sudo pecl install mongo" and then add "extension=mongo.so" to php.ini as per instructions. Then restart apache "sudo service apache2 restart".
-+
 
 ## Article Text
 
