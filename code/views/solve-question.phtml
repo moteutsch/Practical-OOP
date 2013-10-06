@@ -1,0 +1,20 @@
+<h3><?php echo $question->getQuestion(); ?></h3>
+
+<?php if ($wasAnswerCorrect !== null): ?>
+    <?php if ($wasAnswerCorrect): ?>
+    <p>Woot! You got the last question right.</p>
+    <?php else: ?>
+    <p>Oops, you got the last question wrong.</p>
+    <?php endif; ?>
+<?php endif; ?>
+
+<form action="check-answer" method="post">
+    <ul>
+        <?php $solutions = $question->getSolutions(); ?>
+        <?php foreach ($solutions as $id => $solution): ?>
+            <li><input type="radio" name="id" value="<?php echo $id; ?>"> <?php echo $solution; ?></li>
+        <?php endforeach; ?>
+    </ul>
+
+    <input type="submit" value="Submit">
+</form>

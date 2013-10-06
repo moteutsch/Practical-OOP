@@ -30,10 +30,12 @@ Extra features:
 ### Structure
 
 + Introduction: why this article is important and what it'll cover
-+ Setting up the project: Installing MongoDB, setting up composer and adding Slim as dependency
++ Installing dependencies: Installing MongoDB, setting up composer and adding Slim as dependency
     curl -sS https://getcomposer.org/installer | php
     
     Install MongoDB "sudo pecl install mongo" and then add "extension=mongo.so" to php.ini as per instructions. Then restart apache "sudo service apache2 restart".
+**The ordering of sections here is important. Need to give this some thought.**
++ The "Choose Quiz" Page: coding the Slim controller, the view for choosing, the service, the mapper, the entity. Mention the role of each section: Service handles sessions, controllers shouldn't do that. Service doesn't do database look ups. Entities are POJOs for convenience.
 
 ## Article Text
 
