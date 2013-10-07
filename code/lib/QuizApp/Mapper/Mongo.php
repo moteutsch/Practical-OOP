@@ -22,9 +22,9 @@ class Mongo implements QuizInterface
     public function findAll()
     {
         $entities = array();
-        $result = $this->collection->find();
+        $results = $this->collection->find();
         foreach ($results as $result) {
-            $e = $entities[] = $this->rowToEntity($result);
+            $entities[] = $e = $this->rowToEntity($result);
             $this->cacheEntity($e);
         }
         return $entities;
@@ -36,10 +36,11 @@ class Mongo implements QuizInterface
      */
     public function find($id)
     {
+        $id = (string) $id;
         if (isset(self::$MAP[$id])) {
             return self::$MAP[$id];
         }
-        $row = $this->collection->findOne(array('_id' => new MongoId($id)));
+        $row = $this->collection->findOne(array('_id' => new \MongoId($id)));
         if ($row === null) {
             return null;
         }
@@ -50,7 +51,7 @@ class Mongo implements QuizInterface
 
     private function cacheEntity($entity)
     {
-        self::$MAP[$entity->getId()] = $entity;
+        self::$MAP[(string) $entity->getId()] = $entity;
     }
 
     private function rowToEntity($row)
@@ -64,6 +65,7 @@ class Mongo implements QuizInterface
                 );
             }, $row['questions'])
         );
-        $result->setId($row['id']);
+        $result->setId($row['_id']);
+        return $result;
     }
 }

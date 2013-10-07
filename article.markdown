@@ -22,11 +22,6 @@ Top down:
 
 **Mention**: Abstracting away session for compatability with CLI an other non-web (cookie) interfaces
 
-Extra features: 
-
-+ Pass or fail based on number of correct/incorrect questions (set in database)
-+ Simple server-side timer for quiz (time set in database)
-
 ### Structure
 
 + Introduction: why this article is important and what it'll cover
@@ -36,6 +31,18 @@ Extra features:
     Install MongoDB "sudo pecl install mongo" and then add "extension=mongo.so" to php.ini as per instructions. Then restart apache "sudo service apache2 restart".
 **The ordering of sections here is important. Need to give this some thought.**
 + The "Choose Quiz" Page: coding the Slim controller, the view for choosing, the service, the mapper, the entity. Mention the role of each section: Service handles sessions, controllers shouldn't do that. Service doesn't do database look ups. Entities are POJOs for convenience.
+
+# Propogating MongoDb
+
+    use practicaloop
+    db.quizes.insert({
+      title: 'First Quiz', 
+      questions: [{
+          question: 'Who\'s buried in Grant\'s tomb?',
+          solutions: ['Jack', 'Joe', 'Grant', 'Jill'], 
+          correctIndex: 2
+      }]
+    })
 
 ## Article Text
 

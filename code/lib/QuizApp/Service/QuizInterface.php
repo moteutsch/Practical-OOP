@@ -13,7 +13,6 @@ interface QuizInterface
 
     /**
      * @return Question
-     * @throws \LogicException
      */
     public function getQuestion();
 

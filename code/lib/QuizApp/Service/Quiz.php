@@ -8,6 +8,8 @@ class Quiz implements QuizInterface
 {
     const CURRENT_QUIZ     = 'quizService_currentQuiz';
     const CURRENT_QUESTION = 'quizService_currentQuestion';
+    const CORRECT          = 'quizService_correct';
+    const INCORRECT        = 'quizService_incorrect';
 
     private $mapper;
 
@@ -35,8 +37,8 @@ class Quiz implements QuizInterface
         }
         $_SESSION[self::CURRENT_QUIZ] = $quizOrId->getId();
 
-        $_SESSION['correct'] = 0;
-        $_SESSION['incorrect'] = 0;
+        $_SESSION[self::CORRECT] = 0;
+        $_SESSION[self::INCORRECT] = 0;
     }
 
     /**
@@ -88,7 +90,7 @@ class Quiz implements QuizInterface
      */
     public function getResult()
     {
-        return new Result($_SESSION['correct'], $_SESSION['incorrect'], ($_SESSION['correct'] + $_SESSION['incorrect']) / 2);
+        return new Result($_SESSION[self::CORRECT], $_SESSION[self::INCORRECT], ($_SESSION[self::CORRECT] + $_SESSION[self::INCORRECT]) / 2);
     }
 
     private function getCurrentQuiz()
@@ -110,7 +112,7 @@ class Quiz implements QuizInterface
 
     private function addResult($isCorrect)
     {
-        $type = ($isCorrect ? 'correct' : 'incorrect');
+        $type = ($isCorrect ? self::CORRECT : self::INCORRECT);
         if (!isset($_SESSION[$type])) {
             $_SESSION[$type] = 0;
         }
