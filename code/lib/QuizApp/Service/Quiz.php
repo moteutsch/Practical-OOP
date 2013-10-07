@@ -13,7 +13,7 @@ class Quiz implements QuizInterface
 
     private $mapper;
 
-    public function __construct($mapper)
+    public function __construct(\QuizApp\Mapper\QuizInterface $mapper)
     {
         $this->mapper = $mapper;
     }
