@@ -5,6 +5,20 @@ At a certain of my development as a PHP programmer, I was building MVC applicati
 
 In this article, we'll build a quiz application using these concepts. We'll separate the application into layers, allowing us to substitute components: for example, it'll be a breeze to switch from MongoDB to MySQL, or from a web interface to a command-line interface.
 
+## Why MVC Isn't Enough
+
+MVC, which stands for Model-View-Controller, is a powerful design pattern for web applications. Unfortunately, with its rise to buzzword status, it has been taken out of context and used a miracle cure. It's become standard practice to use MVC frameworks, and many developers have succeeded in using it to separate display logic and domain logic. The trouble is that developers stop there, building quasi-object-oriented systems at best and procedural code wrapped in classes--often controllers--at worst.
+
+In building our quiz application, we'll be using the Domain Model pattern described in Martin Fowler's Patterns of Enterprise Application Architecture. The Domain Model is just a fancy was of saying that we'll be using an object-oriented approach to designing the system: a web of objects with different responsibilities that, as a whole, will comprise our application.
+
+The Domain Model approach uses "entity" objects to represent information in the database; but instead of having our object-oriented code mimic the database, we'll have the database mimic our object-oriented design. Why? Because it allows us to build good object-oriented code. This mapping is a serious issue called Object-Relational Mapping, but luckily there are several mature libraries available in PHP that solve this problem[1]. We'll be side-stepping the issue by manually writing the specific mapping code we need.
+
+Even when using the Domain Model pattern, though, there is still the problem of preforming operation that require multiple classes to work together. We'll be solving this with the Service Layer pattern.
+
+## The Service Layer
+
+
+
 ## Setup
 
 We'll be using Slim for the MVC framework. We'll install Slim with Composer, the dependency management tool. Create a directory for the project and run the following command inside:
@@ -334,3 +348,7 @@ That's a long one. Let's go over it method by method.
 ## Writing a Real Mapper with MongoDB
 
 ## Conclusion
+
+---
+
+1: The one I'd recommend is called Doctrine 2.
