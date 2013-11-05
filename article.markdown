@@ -15,9 +15,11 @@ The Domain Model approach uses "entity" objects to represent information in the 
 
 Even when using the Domain Model pattern, though, there is still the problem of preforming operation that require multiple classes to work together. We'll be solving this with the Service Layer pattern.
 
-## The Service Layer
+## The Service Layer Pattern
 
+Correct object-oriented design dictates that you should write decoupled code. Each class should have a single responsibility. Well, how then do you combine these independent classes to perform our business logic?
 
+The Service Layer pattern addresses this problem. We group all our systems operations (e.g., signing up, sending invitation emails to friends, etc.) into service classes, one service per operation, or group of closely-related operations. We make sure these classes are decoupled from any higher level details, such as their interface [possibily rephrase beginning, and active voice]. This allows us to reuse these opeartion between different use-cases, say the web interface and the CLI interface, the front- and back-end interfaces, and so on.
 
 ## Setup
 
