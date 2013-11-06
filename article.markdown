@@ -238,7 +238,6 @@ Okay, now that we've defined the interface for the mapper and created the entity
          */
         public function showAllQuizes()
         {
-            // NOTE: We don't want the controller to access the mapper directly, so we create a wrapper function in order to hide it
             return $this->mapper->findAll();
         }
 
@@ -336,6 +335,22 @@ Okay, now that we've defined the interface for the mapper and created the entity
     }
 
 That's a long one. Let's go over it method by method.
+
+The `showAllQuizes()` method wraps the `QuizMapper::findAll()` method. We could make `$mapper` public, but we'd break encapsulation by leaking low-level operations to the higher level classes.
+
+The `startQuiz()` method begins the quiz passed as an argument by storing the quiz in the session for future reference. It accepts either a quiz entity object or a quiz ID, in which case it looks up the quiz using the `$mapper`. The method uses the `$_SESSION` superglobal directly, which isn't best practice--the service would break if used in a command-line context, for instance--, but there's no need to over-complicate the service yet. Later we would use a session interface that is implementation ambivalent [wrong word] for the user to pass the correct instance of for his purposes. [Re-work sentence]
+
+The `getQuestion()` method tries getting the next question of the current quiz from the database, [word for giving responsibility to lower level] to other helpers methods, and throws an exception if the quiz is over or the user isn't in the middle of a quiz.
+
+The `checkSolution()` method returns whether the user's solution is correct, and updates the session to reflect the state of the quiz after the question is answered.
+
+The `isOver()` method returns true if the current quiz is over or if no quiz is underway.
+
+The `getResult()` method returns a `QuizApp\Service\Quiz\Result` object that tells the user whether he passed the quiz and how many questions he answer correctly. [Should I write out this class, or mention that the reader can see it in the code sample, or what? And how about the other POJO, wrapper classes? SHould I write them out in the code (like I've done), or what?]
+
+[If defining the Result class, it should be here.]
+
+[Define the HardCode mapper here and mention that it's just a placeholder for now.]
 
 ## Controllers and Views with Slim
 
