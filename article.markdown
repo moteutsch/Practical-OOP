@@ -277,6 +277,77 @@ The class implements the interface by returning a couple of hard-coded `Quiz` ob
 
 Now that we've finished setting up the "M" of our MVC application, it's time to write our controllers as views. We're using the Slim framework, but it's easy to replace Slim with any other MVC framework since most of our code is decoupled from the framework.
 
+Create a `index.php` file with the following contents:
+
+    <?php
+
+    require 'vendor/autoload.php';
+    session_start();
+
+    $service = new \QuizApp\Service\Quiz(
+        new \QuizApp\Mapper\HardCode()
+    );
+
+    $app = new \Slim\Slim();
+    $app->config(array('templates.path' => './views'));
+
+    // Controller actions here
+
+    $app->run();
+
+This is the base of our Slim application. We `require` our Composer autoload file that we generated earlier. This autoloads the Slim library files as well as our Model code. Next create our service and start the PHP session, since we use the `$_SESSION` superglobal in our service. Finally we setup our Slim application.
+
+Let's create the homepage first. The homepage will list the quizes the user can take. The controller code for this is straightforward. Add the following by the comment in our `index.php` file.
+
+    $app->get('/', function () use ($service, $app) {
+        $app->render('choose-quiz.phtml', array(
+            'quizes' => $service->showAllQuizes(),
+        ));
+    });
+
+We define a new home page route, "/", and render the "choose-quiz.phtml" view file, passing it the list of our quizes we retrieved from the service. Let's write the view file.
+
+    <h3>Choose a Quiz</h3>
+
+    <ul>
+        <?php foreach ($quizes as $quiz): ?>
+        <li><a href="choose-quiz/<?php echo $quiz->getId(); ?>"><?php echo $quiz->getTitle(); ?></a></li>
+        <?php endforeach; ?>
+    </ul>
+
+At this point the you should be able to go to the home page of the application and see the two quizes we hard-coded earlier, Quiz 1 and Quiz 2.
+
+The quiz links point to "choose-quiz/:id", where ":id" is the ID of the quiz. This URL should choose the quiz the user clicked and redirect him to the first question. Add the following route to `index.php`:
+
+    $app->get('/choose-quiz/:id', function ($id) use ($service, $app) {
+        $service->startQuiz($id);
+        $app->redirect('/solve-question');
+    });
+
+
+
+----
+
+    $app->get('/solve-question', function () use ($service, $app) {
+        $app->render('solve-question.phtml', array(
+            'question' => $service->getQuestion(),
+        ));
+    });
+    $app->post('/check-answer', function () use ($service, $app) {
+        $isCorrect = $service->checkSolution($app->request->post('id'));
+        if (!$service->isOver()) {
+            $app->redirect('/solve-question');
+        } else {
+            $app->redirect('/end');
+        }
+    });
+
+    $app->get('/end', function () use ($service, $app) {
+        $app->render('end.phtml', array(
+            'result' => $service->getResult(),
+        ));
+    });
+
 ## Writing a Real Mapper with MongoDB
 
 ## Conclusion
@@ -289,4 +360,6 @@ Now that we've finished setting up the "M" of our MVC application, it's time to 
 
 TODO:
 
++ Mention setting up virtual host for site.
 + Changing between "you" and "we" when narrating the code
++ The "create the following" vs. "I've written it and am explaining it to you" conundrum.
