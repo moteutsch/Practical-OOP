@@ -215,144 +215,67 @@ Okay, now that we've defined the interface for the mapper and created the entity
 
     <?php
 
-    namespace QuizApp\Service;
+    namespace QuizApp\Mapper;
 
-    use QuizApp\Service\Quiz\Result;
-
-    class Quiz implements QuizInterface
+    class HardCoded implements QuizInterface
     {
-        const CURRENT_QUIZ     = 'quizService_currentQuiz';
-        const CURRENT_QUESTION = 'quizService_currentQuestion';
-        const CORRECT          = 'quizService_correct';
-        const INCORRECT        = 'quizService_incorrect';
+        public static $MAP = array();
 
-        private $mapper;
-
-        public function __construct(\QuizApp\Mapper\QuizInterface $mapper)
+        /**
+         * @return \QuizApp\Entity\Quiz[]
+         */
+        public function findAll()
         {
-            $this->mapper = $mapper;
+            return array(
+                $this->find(0),
+                $this->find(1),
+            );
         }
 
         /**
-         * @return \Entity\Quiz[]
+         * @param int $id
+         * @return \QuizApp\Entity\Quiz
          */
-        public function showAllQuizes()
+        public function find($id)
         {
-            return $this->mapper->findAll();
-        }
-
-        public function startQuiz($quizOrId)
-        {
-            if (!$quizOrId instanceof \QuizApp\Entity\Quiz) {
-                $quizOrId = $this->mapper->find($quizOrId);
-                if ($quizOrId === null) {
-                    throw new \InvalidArgumentException('Quiz not found');
-                }
+            if (isset(self::$MAP[$id])) {
+                return self::$MAP[$id];
             }
-            $_SESSION[self::CURRENT_QUIZ] = $quizOrId->getId();
-
-            $_SESSION[self::CORRECT] = 0;
-            $_SESSION[self::INCORRECT] = 0;
-        }
-
-        /**
-         * @return Question
-         * @throws \LogicException
-         */
-        public function getQuestion()
-        {
-            $questions = $this->getCurrentQuiz()->getQuestions();
-            $currentQuestion = $this->getCurrentQuestionId();
-
-            // NOTE: Include refactoring step from this to adding a quiz method for count and get($i)
-            if ($this->isOver()) {
-                throw new \LogicException();
-            }
-            $result = $questions[$currentQuestion];
+            $result = new \QuizApp\Entity\Quiz(
+                'Quiz ' . $id, array(
+                    new \QuizApp\Entity\Question(
+                        'What color was George Washington\'s white horse?',
+                        array(
+                            'White',
+                            'Gray',
+                            'Yellow',
+                            'All of the above'
+                        ),
+                        0
+                    ),
+                    new \QuizApp\Entity\Question(
+                        'Who\'s buried in Grant\'s tomb?',
+                        array(
+                            'Grant',
+                            'George Washington',
+                            'George Washinton\'s horse',
+                            'All of the above'
+                        ),
+                        0
+                    ),
+                )
+            );
+            $result->setId($id);
+            self::$MAP[$id] = $result;
             return $result;
-        }
-
-        /**
-         * @return bool
-         */
-        public function checkSolution($id)
-        {
-            $result = $this->getQuestion()->isCorrect($id);
-            $_SESSION[self::CURRENT_QUESTION] = $this->getCurrentQuestionId() + 1;
-            $this->addResult($result);
-            if ($this->isOver()) {
-                $_SESSION[self::CURRENT_QUESTION] = null;
-                $_SESSION[self::CURRENT_QUIZ] = null;
-            }
-            return $result;
-        }
-
-        /**
-         * @return bool
-         */
-        public function isOver()
-        {
-            try {
-                return $this->getCurrentQuestionId() >= count($this->getCurrentQuiz()->getQuestions());
-            } catch (\LogicException $e) {
-                return true;
-            }
-        }
-
-        /**
-         * @return Result
-         */
-        public function getResult()
-        {
-            return new Result($_SESSION[self::CORRECT], $_SESSION[self::INCORRECT], ($_SESSION[self::CORRECT] + $_SESSION[self::INCORRECT]) / 2);
-        }
-
-        private function getCurrentQuiz()
-        {
-            if (!isset($_SESSION[self::CURRENT_QUIZ])) {
-                throw new \LogicException();
-            }
-            $quiz = $this->mapper->find($_SESSION[self::CURRENT_QUIZ]);
-            if ($quiz === null) {
-                throw new \LogicException();
-            }
-            return $quiz;
-        }
-
-        private function getCurrentQuestionId()
-        {
-            return isset($_SESSION[self::CURRENT_QUESTION]) ? $_SESSION[self::CURRENT_QUESTION] : 0;
-        }
-
-        private function addResult($isCorrect)
-        {
-            $type = ($isCorrect ? self::CORRECT : self::INCORRECT);
-            if (!isset($_SESSION[$type])) {
-                $_SESSION[$type] = 0;
-            }
-            $_SESSION[$type] += 1;
         }
     }
 
-That's a long one. Let's go over it method by method.
-
-The `showAllQuizes()` method wraps the `QuizMapper::findAll()` method. We could make `$mapper` public, but we'd break encapsulation by leaking low-level operations to the higher level classes.
-
-The `startQuiz()` method begins the quiz passed as an argument by storing the quiz in the session for future reference. It accepts either a quiz entity object or a quiz ID, in which case it looks up the quiz using the `$mapper`. The method uses the `$_SESSION` superglobal directly, which isn't best practice--the service would break if used in a command-line context, for instance--, but there's no need to over-complicate the service yet. Later we would use a session interface that is implementation ambivalent [wrong word] for the user to pass the correct instance of for his purposes. [Re-work sentence]
-
-The `getQuestion()` method tries getting the next question of the current quiz from the database, [word for giving responsibility to lower level] to other helpers methods, and throws an exception if the quiz is over or the user isn't in the middle of a quiz.
-
-The `checkSolution()` method returns whether the user's solution is correct, and updates the session to reflect the state of the quiz after the question is answered.
-
-The `isOver()` method returns true if the current quiz is over or if no quiz is underway.
-
-The `getResult()` method returns a `QuizApp\Service\Quiz\Result` object that tells the user whether he passed the quiz and how many questions he answer correctly. [Should I write out this class, or mention that the reader can see it in the code sample, or what? And how about the other POJO, wrapper classes? SHould I write them out in the code (like I've done), or what?]
-
-[If defining the Result class, it should be here.]
-
-[Define the HardCode mapper here and mention that it's just a placeholder for now.]
+The class implements the interface by returning a couple of hard-coded `Quiz` objects. It uses the `$map` static property as an Identity Map to ensure the class returns the same objects each time it's called.
 
 ## Controllers and Views with Slim
+
+Now that we've finished setting up the "M" of our MVC application, it's time to write our controllers as views. We're using the Slim framework, but it's easy to replace Slim with any other MVC framework since most of our code is decoupled from the framework.
 
 ## Writing a Real Mapper with MongoDB
 
