@@ -213,6 +213,247 @@ Notice that `\QuizApp\Entity\Question` has a method `isCorrect()` for checking i
 
 Okay, now that we've defined the interface for the mapper and created the entity classes, we have all the building blocks we need for creating the service.
 
+   <?php
+
+    namespace QuizApp\Service;
+
+    use QuizApp\Service\Quiz\Result;
+
+    class Quiz implements QuizInterface
+    {
+        const CURRENT_QUIZ     = 'quizService_currentQuiz';
+        const CURRENT_QUESTION = 'quizService_currentQuestion';
+        const CORRECT          = 'quizService_correct';
+        const INCORRECT        = 'quizService_incorrect';
+
+        private $mapper;
+
+        public function __construct(\QuizApp\Mapper\QuizInterface $mapper)
+        {
+            $this->mapper = $mapper;
+        }
+
+        /**
+         * @return \Entity\Quiz[]
+         */
+        public function showAllQuizes()
+        {
+            return $this->mapper->findAll();
+        }
+
+        public function startQuiz($quizOrId)
+        {
+            if (!$quizOrId instanceof \QuizApp\Entity\Quiz) {
+                $quizOrId = $this->mapper->find($quizOrId);
+                if ($quizOrId === null) {
+                    throw new \InvalidArgumentException('Quiz not found');
+                }
+            }
+            $_SESSION[self::CURRENT_QUIZ] = $quizOrId->getId();
+
+            $_SESSION[self::CORRECT] = 0;
+            $_SESSION[self::INCORRECT] = 0;
+        }
+
+        /**
+         * @return Question
+         * @throws \LogicException
+         */
+        public function getQuestion()
+        {
+            $questions = $this->getCurrentQuiz()->getQuestions();
+            $currentQuestion = $this->getCurrentQuestionId();
+
+            // NOTE: Include refactoring step from this to adding a quiz method for count and get($i)
+            if ($this->isOver()) {
+                throw new \LogicException();
+            }
+            $result = $questions[$currentQuestion];
+            return $result;
+        }
+
+        /**
+         * @return bool
+         */
+        public function checkSolution($id)
+        {
+            $result = $this->getQuestion()->isCorrect($id);
+            $_SESSION[self::CURRENT_QUESTION] = $this->getCurrentQuestionId() + 1;
+            $this->addResult($result);
+            if ($this->isOver()) {
+                $_SESSION[self::CURRENT_QUESTION] = null;
+                $_SESSION[self::CURRENT_QUIZ] = null;
+            }
+            return $result;
+        }
+
+        /**
+         * @return bool
+         */
+        public function isOver()
+        {
+            try {
+                return $this->getCurrentQuestionId() >= count($this->getCurrentQuiz()->getQuestions());
+            } catch (\LogicException $e) {
+                return true;
+            }
+        }
+         */
+        public function findAll();
+
+        /**
+         * @param int $i
+         * @return \QuizApp\Entity\Quiz
+         */
+        public function find($i);
+    }
+
+These operations return objects of the class `\QuizApp\Entity\Quiz`. The class stores the information of a single quiz. The class also makes available `\QuizApp\Entity\Question` objects, containing information about quiz questions. Let's implement these before returning to the service.
+
+    <?php
+
+    namespace QuizApp\Entity;
+
+    class Question
+    {
+        private $id;
+        private $question;
+        private $solutions;
+        private $correctIndex;
+
+        /**
+         * @param string $question
+         * @param string[] $solutions
+         * @param int $correctSolutionIndex
+         */
+        public function __construct($question, array $solutions, $correctSolutionIndex)
+        {
+            $this->question = $question;
+            $this->solutions = $solutions;
+            $this->correctIndex = $correctSolutionIndex;
+            if (!isset($this->solutions[$this->correctIndex])) {
+                throw new \InvalidArgumentException('Invalid index');
+            }
+        }
+
+        public function setId($id)
+        {
+            $this->id = $id;
+        }
+
+        public function getId()
+        {
+            return $this->id;
+        }
+
+        public function getQuestion()
+        {
+            return $this->question;
+        }
+
+        public function getSolutions()
+        {
+            return $this->solutions;
+        }
+
+        public function getCorrectSolution()
+        {
+            return $this->solutions[$this->correctIndex];
+        }
+
+        public function isCorrect($solutionId)
+        {
+            return $this->correctIndex == $solutionId;
+        }
+    }
+
+Notice that `\QuizApp\Entity\Question` has a method `isCorrect()` for checking if a certain answer to the question is correct.
+
+    <?php
+
+    namespace QuizApp\Entity;
+
+    class Quiz
+    {
+        private $id;
+        private $title;
+        private $questions;
+
+        /**
+         * @param string $title
+         * @param Question[] $questions
+         */
+        public function __construct($title, array $questions)
+        {
+            $this->title     = $title;
+            $this->questions = $questions;
+        }
+
+        public function setId($id)
+        {
+            $this->id = $id;
+        }
+
+        public function getId()
+        {
+            return $this->id;
+        }
+
+        /**
+         * @return Result
+         */
+        public function getResult()
+        {
+            return new Result($_SESSION[self::CORRECT], $_SESSION[self::INCORRECT], ($_SESSION[self::CORRECT] + $_SESSION[self::INCORRECT]) / 2);
+        }
+
+        private function getCurrentQuiz()
+        {
+            if (!isset($_SESSION[self::CURRENT_QUIZ])) {
+                throw new \LogicException();
+            }
+            $quiz = $this->mapper->find($_SESSION[self::CURRENT_QUIZ]);
+            if ($quiz === null) {
+                throw new \LogicException();
+            }
+            return $quiz;
+        }
+
+        private function getCurrentQuestionId()
+        {
+            return isset($_SESSION[self::CURRENT_QUESTION]) ? $_SESSION[self::CURRENT_QUESTION] : 0;
+        }
+
+        private function addResult($isCorrect)
+        {
+            $type = ($isCorrect ? self::CORRECT : self::INCORRECT);
+            if (!isset($_SESSION[$type])) {
+                $_SESSION[$type] = 0;
+            }
+            $_SESSION[$type] += 1;
+        }
+    }
+
+That's a long one. Let's go over it method by method.
+
+The `showAllQuizes()` method wraps the `QuizMapper::findAll()` method. We could make `$mapper` public, but we'd break encapsulation by leaking low-level operations to the higher level classes.
+
+The `startQuiz()` method begins the quiz passed as an argument by storing the quiz in the session for future reference. It accepts either a quiz entity object or a quiz ID, in which case it looks up the quiz using the `$mapper`. The method uses the `$_SESSION` superglobal directly, which isn't best practice--the service would break if used in a command-line context, for instance--, but there's no need to over-complicate the service yet. Later we would use a session interface that is implementation ambivalent [wrong word] for the user to pass the correct instance of for his purposes. [Re-work sentence]
+
+The `getQuestion()` method tries getting the next question of the current quiz from the database, [word for giving responsibility to lower level] to other helpers methods, and throws an exception if the quiz is over or the user isn't in the middle of a quiz.
+
+The `checkSolution()` method returns whether the user's solution is correct, and updates the session to reflect the state of the quiz after the question is answered.
+
+The `isOver()` method returns true if the current quiz is over or if no quiz is underway.
+
+The `getResult()` method returns a `QuizApp\Service\Quiz\Result` object that tells the user whether he passed the quiz and how many questions he answer correctly. [Should I write out this class, or mention that the reader can see it in the code sample, or what? And how about the other POJO, wrapper classes? SHould I write them out in the code (like I've done), or what?]
+
+[If defining the Result class, it should be here.]
+
+## Writing a Placeholder Mapper
+
+[Mention that we're writing a placeholder mapper and that it's only supposed to be a placeholder so we can easily test the code, etc.]
+
     <?php
 
     namespace QuizApp\Mapper;
@@ -334,9 +575,20 @@ Now let's define the "/solve-question" route. This route will show the user the 
 
 The route renders the view "solve-question.phtml" with the question returned from the service. Let's define the view.
 
+    <h3><?php echo $question->getQuestion(); ?></h3>
 
+    <form action="check-answer" method="post">
+        <ul>
+            <?php $solutions = $question->getSolutions(); ?>
+            <?php foreach ($solutions as $id => $solution): ?>
+                <li><input type="radio" name="id" value="<?php echo $id; ?>"> <?php echo $solution; ?></li>
+            <?php endforeach; ?>
+        </ul>
 
-----
+        <input type="submit" value="Submit">
+    </form>
+
+We show the user a form with a radio button per answer. The form sends the result to the "check-answer" route.
 
     $app->post('/check-answer', function () use ($service, $app) {
         $isCorrect = $service->checkSolution($app->request->post('id'));
@@ -347,11 +599,21 @@ The route renders the view "solve-question.phtml" with the question returned fro
         }
     });
 
+This time we're defining a route "POST" request, so we use the `$app->post()` method. To get the solution ID sent by the user we call `$app->request->post('id')`. The service returns whether this answer was correct. If there are more questions for the user to answer, we redirect him back to the "solve-question" route. If he's finished the quiz, we send him to the "end" route. This should tell the user whether he passed the quiz and how many questions he answered correctly.
+
     $app->get('/end', function () use ($service, $app) {
         $app->render('end.phtml', array(
             'result' => $service->getResult(),
         ));
     });
+
+We do this by getting a `\QuizApp\Service\Quiz\Result` object from the service and passing it to the view.
+
+[Show view here.]
+
+----
+
+
 
 ## Writing a Real Mapper with MongoDB
 
