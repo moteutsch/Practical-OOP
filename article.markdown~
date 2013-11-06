@@ -319,8 +319,39 @@ At this point the you should be able to go to the home page of the application a
 
 The quiz links point to "choose-quiz/:id", where ":id" is the ID of the quiz. This URL should choose the quiz the user clicked and redirect him to the first question. Add the following route to `index.php`:
 
+    $app->get('/choose-quiz/:id', function ($id) use ($service, $app) {
+        $service->startQuiz($id);
+        $app->redirect('/solve-question');
+    });
+
+Now let's define the "/solve-question" route. This route will show the user the current question of the quiz he is solving.
+
+    $app->get('/solve-question', function () use ($service, $app) {
+        $app->render('solve-question.phtml', array(
+            'question' => $service->getQuestion(),
+        ));
+    });
+
+The route renders the view "solve-question.phtml" with the question returned from the service. Let's define the view.
 
 
+
+----
+
+    $app->post('/check-answer', function () use ($service, $app) {
+        $isCorrect = $service->checkSolution($app->request->post('id'));
+        if (!$service->isOver()) {
+            $app->redirect('/solve-question');
+        } else {
+            $app->redirect('/end');
+        }
+    });
+
+    $app->get('/end', function () use ($service, $app) {
+        $app->render('end.phtml', array(
+            'result' => $service->getResult(),
+        ));
+    });
 
 ## Writing a Real Mapper with MongoDB
 

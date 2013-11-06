@@ -324,15 +324,31 @@ The quiz links point to "choose-quiz/:id", where ":id" is the ID of the quiz. Th
         $app->redirect('/solve-question');
     });
 
-
-
-----
+Now let's define the "/solve-question" route. This route will show the user the current question of the quiz he is solving.
 
     $app->get('/solve-question', function () use ($service, $app) {
         $app->render('solve-question.phtml', array(
             'question' => $service->getQuestion(),
         ));
     });
+
+The route renders the view "solve-question.phtml" with the question returned from the service. Let's define the view.
+
+    <h3><?php echo $question->getQuestion(); ?></h3>
+
+    <form action="check-answer" method="post">
+        <ul>
+            <?php $solutions = $question->getSolutions(); ?>
+            <?php foreach ($solutions as $id => $solution): ?>
+                <li><input type="radio" name="id" value="<?php echo $id; ?>"> <?php echo $solution; ?></li>
+            <?php endforeach; ?>
+        </ul>
+
+        <input type="submit" value="Submit">
+    </form>
+
+We show the user a form with a radio button per answer. The form sends the result to the "check-answer" route.
+
     $app->post('/check-answer', function () use ($service, $app) {
         $isCorrect = $service->checkSolution($app->request->post('id'));
         if (!$service->isOver()) {
@@ -342,11 +358,21 @@ The quiz links point to "choose-quiz/:id", where ":id" is the ID of the quiz. Th
         }
     });
 
+This time we're defining a route "POST" request, so we use the `$app->post()` method. To get the solution ID sent by the user we call `$app->request->post('id')`. The service returns whether this answer was correct. If there are more questions for the user to answer, we redirect him back to the "solve-question" route. If he's finished the quiz, we send him to the "end" route. This should tell the user whether he passed the quiz and how many questions he answered correctly.
+
     $app->get('/end', function () use ($service, $app) {
         $app->render('end.phtml', array(
             'result' => $service->getResult(),
         ));
     });
+
+We do this by getting a `\QuizApp\Service\Quiz\Result` object from the service and passing it to the view.
+
+[Show view here.]
+
+----
+
+
 
 ## Writing a Real Mapper with MongoDB
 
@@ -360,6 +386,7 @@ The quiz links point to "choose-quiz/:id", where ":id" is the ID of the quiz. Th
 
 TODO:
 
++ IMPORTANT: The service section was deleted. Get it back from the repository.
 + Mention setting up virtual host for site.
 + Changing between "you" and "we" when narrating the code
 + The "create the following" vs. "I've written it and am explaining it to you" conundrum.
