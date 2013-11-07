@@ -509,15 +509,23 @@ This time we're defining a route "POST" request, so we use the `$app->post()` me
 
 We do this by getting a `\QuizApp\Service\Quiz\Result` object from the service and passing it to the view.
 
-[Show view here.]
+    <?php if ($result->hasPassed()): ?>
+    <h3>You passed!</h3>
+    <?php else: ?>
+    <h3>You failed!</h3>
+    <?php endif; ?>
 
-----
+    <p>You got <?php echo $result->getCorrect(); ?> out of <?php echo $result->getTotal(); ?> questions right.</p>
 
-
+    <a href="/">Back to quizes</a>
 
 ## Writing a Real Mapper with MongoDB
 
+[Explain that we're done and that we can write a real MongoDB mapper here.]
+
 ## Conclusion
+
+[TODO]
 
 ---
 
