@@ -523,6 +523,108 @@ We do this by getting a `\QuizApp\Service\Quiz\Result` object from the service a
 
 [Explain that we're done and that we can write a real MongoDB mapper here.]
 
+At this point the app is finished--except that we still have to write a real `\QuizApp\Mapper\QuizInterface` instance to connect to MongoDB.
+
+If you haven't already installed MongoDB, run the following command:
+
+    sudo pecl install mongo
+
+Once the install completes it will tell you to add `extension=mongo.so` to your "php.ini" file. You'll then need to restart apache--`sudo service apache2 restart` on Linux.
+
+Now that we've installed MongoDB, we need to create a database, a collection and propogate the collection with a dummy quiz. Run `mongo` and inside the terminal run the following commands:
+
+    use practicaloop
+    db.quizes.insert({
+      title: 'First Quiz', 
+      questions: [{
+          question: 'Who\'s buried in Grant\'s tomb?',
+          solutions: ['Jack', 'Joe', 'Grant', 'Jill'], 
+          correctIndex: 2
+      }]
+    })
+
+Now we need to write another mapper that implements `QuizInterface`.
+
+    <?php
+
+    namespace QuizApp\Mapper;
+
+    class Mongo implements QuizInterface
+    {
+        public static $MAP = array();
+
+        /**
+         * @var \MongoCollection
+         */
+        private $collection;
+
+        public function __construct(\MongoCollection $collection)
+        {
+            $this->collection = $collection;
+        }
+
+        /**
+         * @return \QuizApp\Entity\Quiz[]
+         */
+        public function findAll()
+        {
+            $entities = array();
+            $results = $this->collection->find();
+            foreach ($results as $result) {
+                $entities[] = $e = $this->rowToEntity($result);
+                $this->cacheEntity($e);
+            }
+            return $entities;
+        }
+
+        /**
+         * @param int $id
+         * @return \QuizApp\Entity\Quiz
+         */
+        public function find($id)
+        {
+            $id = (string) $id;
+            if (isset(self::$MAP[$id])) {
+                return self::$MAP[$id];
+            }
+            $row = $this->collection->findOne(array('_id' => new \MongoId($id)));
+            if ($row === null) {
+                return null;
+            }
+            $entity = $this->rowToEntity($row);
+            $this->cacheEntity($entity);
+            return $entity;
+        }
+
+        private function cacheEntity($entity)
+        {
+            self::$MAP[(string) $entity->getId()] = $entity;
+        }
+
+        private function rowToEntity($row)
+        {
+            $result = new \QuizApp\Entity\Quiz(
+                $row['title'], array_map(function ($question) {
+                    return new \QuizApp\Entity\Question(
+                        $question['question'],
+                        $question['solutions'],
+                        $question['correctIndex']
+                    );
+                }, $row['questions'])
+            );
+            $result->setId($row['_id']);
+            return $result;
+        }
+    }
+
+Let's see what's going on here. The class accepts a `\MongoCollection` as a constructor parameter. It then uses the collection to retrieve rows from the database in the `find()` and `findAll()` methods. Both methods follow the same steps: retrieve the row or rows from the database, convert the rows into our `\QuizApp\Entity\Quiz` and `\QuizApp\Entity\Question` objects, and caches them internally to avoid having to look up the same entities later.
+
+All we have left to do is pass an instance of the new mapper to our service in the `index.php` file.
+
+    $service = new \QuizApp\Service\Quiz(
+        new \QuizApp\Mapper\Mongo((new \MongoClient)->practicaloop->quizes)
+    );
+
 ## Conclusion
 
 [TODO]
