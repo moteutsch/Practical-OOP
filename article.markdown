@@ -627,7 +627,7 @@ All we have left to do is pass an instance of the new mapper to our service in t
 
 ## Conclusion
 
-[TODO]
+In this article I showed you how to build an MVC web application using the Service Layer and Domain Model design patterns. By doing so we followed MVC's "fat model, thin controller" rule, keeping our entire controller code to 40 lines. I showed you how to create an implementation-ambilvalent[agian, wrong word] mapper for accessing the database. And we created a service for running the quiz regardless of the user-interface[better word, truing to convey CLI, API, web app, back-end, etc.]. I'll leave it to you to create a command-line version of the application.
 
 ---
 
@@ -637,6 +637,11 @@ All we have left to do is pass an instance of the new mapper to our service in t
 
 TODO:
 
-+ Mention setting up virtual host for site.
-+ Changing between "you" and "we" when narrating the code
-+ The "create the following" vs. "I've written it and am explaining it to you" conundrum.
++ General:
+    + Mention setting up virtual host for site.
+    + Changing between "you" and "we" when narrating the code
+    + The "create the following" vs. "I've written it and am explaining it to you" conundrum.
++ Rewrite:
+    + Introduction 
+    + Conclusion
+    + Get rid of footnote(?)
