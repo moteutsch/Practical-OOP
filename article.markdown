@@ -3,13 +3,13 @@
 
 At a certain of my development as a PHP programmer, I was building MVC applications by-the-book, without understanding the ins-and-outs. I did what I was told: fat model, thin controller. Don't put logic in your views. What I didn't understand was how to creative a cohesive application structure that allowed me to express my business ideas as maintainable, navigable code. Nor did I understand how to really separate my concerns into tight layers without leaking low-level logic into higher layers. I'd heard about SOLID principles, but applying them to a web app was a mystery.
 
-In this article, we'll build a quiz application using these concepts. We'll separate the application into layers, allowing us to substitute components: for example, it'll be a breeze to switch from MongoDB to MySQL, or from a web interface to a command-line interface.
+In this article, we'll build a quiz application using these concepts. [This is kinda off-point.] We'll separate the application into layers, allowing us to substitute components: for example, it'll be a breeze to switch from MongoDB to MySQL, or from a web interface to a command-line interface.
 
 ## Why MVC Isn't Enough
 
 MVC, which stands for Model-View-Controller, is a powerful design pattern for web applications. Unfortunately, with its rise to buzzword status, it has been taken out of context and used as a miracle cure. It's become standard practice to use MVC frameworks, and many developers have succeeded in using them to separate display logic and domain logic. The trouble is that developers stop there, building quasi-object-oriented systems at best and procedural code wrapped in classes--often controllers--at worst.
 
-In building our quiz application, we'll be using the Domain Model pattern described in Martin Fowler's Patterns of Enterprise Application Architecture. Domain Model is just a fancy way of saying that we'll be using an object-oriented approach to designing the system: a web of objects with different responsibilities that, as a whole, will comprise our application.
+In building our quiz application, we'll be using the [Domain Model](http://martinfowler.com/eaaCatalog/domainModel.html) pattern described in Martin Fowler's [Patterns of Enterprise Application Architecture](http://martinfowler.com/books/eaa.html). Domain Model is just a fancy way of saying that we'll be using an object-oriented approach to designing the system: a web of objects with different responsibilities that, as a whole, will comprise our application.
 
 The Domain Model approach uses "entity" objects to represent information in the database; but instead of having our object-oriented code mimic the database, we'll have the database mimic our object-oriented design. Why? Because it allows us to build good object-oriented code. This mapping, called Object-Relational Mapping, is a large subject, and outside of the scope of this article. Luckily there are several mature libraries available in PHP that solve this problem[1]. We'll be side-stepping the entirely issue by manually writing the specific mapping code we need for this article.
 
@@ -19,13 +19,11 @@ Even when using the Domain Model pattern there is still the problem of preformin
 
 Correct object-oriented design dictates that you should write decoupled code. Each class should have a single responsibility. Well, how then do we combine these independent classes to perform our business logic?
 
-The Service Layer pattern addresses this problem. We group all our systems operations (e.g., signing up, sending invitation emails to friends, etc.) into service classes, one service per operation, or group of closely-related operations. We decouple these service classes from the classes they use to do their job. This allows us to reuse the services between different use-cases, say the web interface and the CLI interface, the front- and back-end interfaces, and so on.
-
-[Where to put this?: [For the web interface, we'll need three pages: a page for choosing a quiz, a page for answering questions, and a "results" page with the users score. The controllers for these pages will just pass the request data to the service and then send the results to the view.]]
+The Service Layer pattern addresses this problem. We group all our systems operations (e.g., signing up, sending invitation emails to friends, etc.) into service classes, one service per operation or group of closely-related operations. We decouple these service classes from the classes they use to do their job. This allows us to reuse the services between different use-cases, say the web interface and the CLI interface, the front- and back-end interfaces, and so on.
 
 ## Getting Started
 
-We'll be using Slim for the MVC framework. We'll install Slim with Composer, the dependency management tool. Create a directory for the project and run the following command inside:
+We'll be using Slim as our MVC framework. We'll install Slim with Composer, the dependency management tool. Create a directory for the project and run the following command inside:
 
     curl -sS https://getcomposer.org/installer | php
 
@@ -88,7 +86,7 @@ Let's define an interface for the service. Create a file `lib/QuizApp/Service/Qu
 
 Most of the operations should speak for themselves, but `getQuestion()` and `getResult()` might not be so clear. `getQuestion()` returns the next question for the user to answer. `getResult` returns an object with information about the number of correct and incorrect answers, and whether the user passed the quiz. 
 
-Before we implement this service, we should define the mapper interface, as the service will need to use it. [Create a more specific interface: QuizFinder]. The service needs two operations: `find()` which returns a single quiz by ID, and `findAll()`.
+Before we implement this service, we should define the mapper interface, as the service will need to use it. The service needs two operations: `find()` which returns a single quiz by ID, and `findAll()`.
 
     <?php
 
@@ -108,7 +106,7 @@ Before we implement this service, we should define the mapper interface, as the 
         public function find($i);
     }
 
-These operations return objects of the class `\QuizApp\Entity\Quiz`. The class stores the information of a single quiz. The class also makes available `\QuizApp\Entity\Question` objects, containing information about quiz questions. Let's implement these before returning to the service.
+These operations return objects of the class `\QuizApp\Entity\Quiz`, which represents a single quiz. The class contains `\QuizApp\Entity\Question` objects, which represent quiz questions. Let's implement these before returning to the service.
 
     <?php
 
@@ -167,7 +165,7 @@ These operations return objects of the class `\QuizApp\Entity\Quiz`. The class s
         }
     }
 
-Notice that `\QuizApp\Entity\Question` has a method `isCorrect()` for checking if a certain answer to the question is correct.
+Notice that, in addition to its getters and setters, `\QuizApp\Entity\Question` has a method `isCorrect()` for checking if a certain answer to the question is correct.
 
     <?php
 
@@ -211,7 +209,7 @@ Notice that `\QuizApp\Entity\Question` has a method `isCorrect()` for checking i
         }
     }
 
-Okay, now that we've defined the interface for the mapper and created the entity classes, we have all the building blocks we need for creating the service.
+Okay, now that we've defined the interface for the mapper and created the entity classes, we have all the building blocks we need for implementing a concrete service class.
 
    <?php
 
@@ -264,7 +262,6 @@ Okay, now that we've defined the interface for the mapper and created the entity
             $questions = $this->getCurrentQuiz()->getQuestions();
             $currentQuestion = $this->getCurrentQuestionId();
 
-            // NOTE: Include refactoring step from this to adding a quiz method for count and get($i)
             if ($this->isOver()) {
                 throw new \LogicException();
             }
@@ -275,9 +272,9 @@ Okay, now that we've defined the interface for the mapper and created the entity
         /**
          * @return bool
          */
-        public function checkSolution($id)
+        public function checkSolution($solutionId)
         {
-            $result = $this->getQuestion()->isCorrect($id);
+            $result = $this->getQuestion()->isCorrect($solutionId);
             $_SESSION[self::CURRENT_QUESTION] = $this->getCurrentQuestionId() + 1;
             $this->addResult($result);
             if ($this->isOver()) {
@@ -338,9 +335,9 @@ That's a long one. Let's go over it method by method.
 
 The `showAllQuizes()` method wraps the `QuizMapper::findAll()` method. We could make `$mapper` public, but we'd break encapsulation by leaking low-level operations to the higher level classes.
 
-The `startQuiz()` method begins the quiz passed as an argument by storing the quiz in the session for future reference. It accepts either a quiz entity object or a quiz ID, in which case it looks up the quiz using the `$mapper`. The method uses the `$_SESSION` superglobal directly, which isn't best practice--the service would break if used in a command-line context, for instance--, but there's no need to over-complicate the service yet. Later we would use a session interface that is implementation ambivalent [wrong word] for the user to pass the correct instance of for his purposes. [Re-work sentence]
+The `startQuiz()` method begins the quiz passed as an argument by storing the quiz in the session for future reference. It accepts either a quiz entity object or a quiz ID, in which case it tries to find the quiz using the `$mapper`. The method uses the `$_SESSION` superglobal directly, which isn't best practice--the service would break if used in a command-line context, for instance--, but there's no need to over-complicate the service yet. Later we would use a session interface that is implementation ambivalent [wrong word] for the user to pass the correct instance of for his purposes. [Re-work sentence]
 
-The `getQuestion()` method tries getting the next question of the current quiz from the database, [word for giving responsibility to lower level] to other helpers methods, and throws an exception if the quiz is over or the user isn't in the middle of a quiz.
+The `getQuestion()` method tries getting the next question of the current quiz from the database, delegating to other helpers methods, and throws an exception if the quiz is over or the user isn't in the middle of a quiz.
 
 The `checkSolution()` method returns whether the user's solution is correct, and updates the session to reflect the state of the quiz after the question is answered.
 
@@ -426,7 +423,7 @@ Create a `index.php` file with the following contents:
     session_start();
 
     $service = new \QuizApp\Service\Quiz(
-        new \QuizApp\Mapper\HardCode()
+        new \QuizApp\Mapper\HardCoded()
     );
 
     $app = new \Slim\Slim();
@@ -436,7 +433,7 @@ Create a `index.php` file with the following contents:
 
     $app->run();
 
-This is the base of our Slim application. We `require` our Composer autoload file that we generated earlier. This autoloads the Slim library files as well as our Model code. Next create our service and start the PHP session, since we use the `$_SESSION` superglobal in our service. Finally we setup our Slim application.
+This is the base of our Slim application. We `require` the Composer autoload file that we generated earlier. This autoloads the Slim library files as well as our Model code. Next create our service and start the PHP session, since we use the `$_SESSION` superglobal in our service. Finally we setup our Slim application.
 
 Let's create the homepage first. The homepage will list the quizes the user can take. The controller code for this is straightforward. Add the following by the comment in our `index.php` file.
 
@@ -446,7 +443,7 @@ Let's create the homepage first. The homepage will list the quizes the user can 
         ));
     });
 
-We define a new home page route, "/", and render the "choose-quiz.phtml" view file, passing it the list of our quizes we retrieved from the service. Let's write the view file.
+We define the home page route with the `$app->get()` method. We pass the route as the first parameter and pass the code to run as the second parameter, in the form of an anonymous function. In the function we render the "choose-quiz.phtml" view file, passing it the list of our quizes we retrieved from the service. Let's code the view.
 
     <h3>Choose a Quiz</h3>
 
@@ -456,9 +453,10 @@ We define a new home page route, "/", and render the "choose-quiz.phtml" view fi
         <?php endforeach; ?>
     </ul>
 
-At this point the you should be able to go to the home page of the application and see the two quizes we hard-coded earlier, Quiz 1 and Quiz 2.
 
-The quiz links point to "choose-quiz/:id", where ":id" is the ID of the quiz. This URL should choose the quiz the user clicked and redirect him to the first question. Add the following route to `index.php`:
+At this point, if you navigate to the home page of the app with your browser, you'll see the two quizes we hard-coded earlier, "Quiz 1" and "Quiz 2."
+
+The quiz links on the home page point to "choose-quiz/:id", where ":id" is the ID of the quiz. This route should start the quiz that the user chose and redirect him to its first question. Add the following route to `index.php`:
 
     $app->get('/choose-quiz/:id', function ($id) use ($service, $app) {
         $service->startQuiz($id);
@@ -499,7 +497,7 @@ We show the user a form with a radio button per answer. The form sends the resul
         }
     });
 
-This time we're defining a route "POST" request, so we use the `$app->post()` method. To get the solution ID sent by the user we call `$app->request->post('id')`. The service returns whether this answer was correct. If there are more questions for the user to answer, we redirect him back to the "solve-question" route. If he's finished the quiz, we send him to the "end" route. This should tell the user whether he passed the quiz and how many questions he answered correctly.
+This time we're defining a route for "POST" requests, so we use the `$app->post()` method. To get the solution ID sent by the user we call `$app->request->post('id')`. The service returns whether this answer was correct. If there are more questions for the user to answer, we redirect him back to the "solve-question" route. If he's finished the quiz, we send him to the "end" route. This should tell the user whether he passed the quiz and how many questions he answered correctly.
 
     $app->get('/end', function () use ($service, $app) {
         $app->render('end.phtml', array(
@@ -533,8 +531,8 @@ Once the install completes it will tell you to add `extension=mongo.so` to your 
 
 Now that we've installed MongoDB, we need to create a database, a collection and propogate the collection with a dummy quiz. Run `mongo` and inside the terminal run the following commands:
 
-    use practicaloop
-    db.quizes.insert({
+    > use practicaloop
+    > db.quizes.insert({
       title: 'First Quiz', 
       questions: [{
           question: 'Who\'s buried in Grant\'s tomb?',
@@ -645,3 +643,4 @@ TODO:
     + Introduction 
     + Conclusion
     + Get rid of footnote(?)
+    + See inline question about writing out Result object
