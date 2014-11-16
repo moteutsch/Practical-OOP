@@ -4,30 +4,21 @@ namespace QuizApp\Service;
 
 interface QuizInterface
 {
-    /**
-     * @return \Entity\Quiz[]
-     */
+    /** @return \QuizApp\Entity\Quiz[] */
     public function showAllQuizes();
 
     public function startQuiz($quizOrId);
 
-    /**
-     * @return Question
-     */
+    /** @return \QuizApp\Entity\Question */
     public function getQuestion();
 
-    /**
-     * @return bool
-     */
+    /** @return bool */
     public function checkSolution($id);
 
-    /**
-     * @return bool
-     */
+    /** @return bool */
     public function isOver();
 
-    /**
-     * @return Result
-     */
+    /** @return Quiz\Result */
     public function getResult();
 }
+
