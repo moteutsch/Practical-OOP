@@ -1,0 +1,7 @@
+<h3>Choose a Quiz</h3>
+
+<ul>
+    <?php foreach ($quizes as $quiz): ?>
+    <li><a href="choose-quiz/<?php echo $quiz->getId(); ?>"><?php echo $quiz->getTitle(); ?></a></li>
+    <?php endforeach; ?>
+</ul>
